@@ -1,0 +1,154 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+.jobs-page {
+  font-family: "Poppins", sans-serif;
+}
+
+.jobs-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.jobs-page input[type="text"],
+.jobs-page input[type="email"],
+.jobs-page textarea {
+  width: 100%;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  font-family: "Poppins", sans-serif;
+}
+
+.jobs-page input[type="text"]:focus,
+.jobs-page input[type="email"]:focus,
+.jobs-page textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.jobs-page button[type="submit"] {
+  background-color: #2563eb;
+  color: white;
+  font-weight: 500;
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1);
+}
+
+.jobs-page button[type="submit"]:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(37, 99, 235, 0.2);
+}
+
+.jobs-page button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .jobs-page .container {
+    padding: 0 1rem;
+  }
+
+  .jobs-page form {
+    padding: 1.5rem;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.jobs-page .form-container {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.jobs-page .contact-info-item:hover .contact-info-icon {
+  transform: scale(1.1);
+  color: #1d4ed8;
+}
+
+.jobs-page .contact-info-item {
+  transition: all 0.3s ease;
+}
+
+.jobs-page .contact-info-icon {
+  transition: all 0.3s ease;
+}
+
+.jobs-page .bg-white,
+.jobs-page .bg-contact {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.jobs-page .bg-white:hover,
+.jobs-page .bg-contact:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.jobs-page input::placeholder,
+.jobs-page textarea::placeholder {
+  color: #9ca3af;
+  opacity: 0.7;
+}
+
+.jobs-page textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.jobs-page textarea::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.jobs-page textarea::-webkit-scrollbar-thumb {
+  background: #c5c7ca;
+  border-radius: 10px;
+}
+
+.jobs-page textarea::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+.jobs-page .contact-section {
+  background-color: #f0f4f8;
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+  transition: all 0.3s ease;
+}
+
+.jobs-page .contact-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.jobs-page .icon-circle {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.jobs-page .icon-circle:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
+.jobs-page .animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}

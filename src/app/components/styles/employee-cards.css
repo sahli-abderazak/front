@@ -1,0 +1,282 @@
+/* Polices */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+/* Variables */
+:root {
+  --primary-color: #3b82f6;
+  --primary-light: #93c5fd;
+  --secondary-color: #f3f4f6;
+  --text-color: #1f2937;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --border-radius: 0.75rem;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+}
+
+/* Styles généraux */
+.loading-message,
+.error-message {
+  padding: var(--spacing-lg);
+  text-align: center;
+  font-family: "Inter", sans-serif;
+}
+
+.loading-message {
+  color: var(--text-muted);
+}
+
+.error-message {
+  color: #ef4444;
+}
+
+/* Grille de cartes */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Carte utilisateur */
+.user-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  background-color: white;
+  box-shadow: var(--card-shadow);
+}
+
+.user-card:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-2px);
+}
+
+/* En-tête de carte */
+.card-header {
+  height: 6rem;
+  background: linear-gradient(to right, var(--primary-light), var(--primary-color));
+}
+
+/* Avatar */
+.avatar-container {
+  display: flex;
+  justify-content: center;
+}
+
+.user-avatar {
+  height: 6rem;
+  width: 6rem;
+  margin-top: -3rem;
+  border: 4px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-fallback {
+  font-size: 1.5rem;
+  font-weight: 500;
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Contenu de la carte */
+.card-content {
+  padding-top: var(--spacing-md);
+  text-align: center;
+  font-family: "Inter", sans-serif;
+}
+
+.user-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-color);
+  letter-spacing: -0.025em;
+}
+
+.user-badge {
+  display: inline-block;
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: var(--spacing-md);
+}
+
+/* Détails utilisateur */
+.user-details {
+  margin-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  text-align: left;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+.detail-icon {
+  height: 1rem;
+  width: 1rem;
+  color: var(--text-muted);
+}
+
+.detail-label {
+  color: var(--text-muted);
+}
+
+.detail-value {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.email-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.email-link:hover {
+  text-decoration: underline;
+}
+
+/* Pied de carte */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-color);
+  padding-top: var(--spacing-md);
+}
+
+.action-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-button {
+  margin-right: var(--spacing-sm);
+  background-color: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.view-button:hover {
+  background-color: var(--secondary-color);
+}
+
+.archive-button {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.archive-button:hover {
+  background-color: var(--secondary-color);
+}
+
+.button-icon {
+  height: 1rem;
+  width: 1rem;
+  margin-right: var(--spacing-sm);
+}
+
+.archive-dialog-title {
+    color: #e11d48;
+  }
+  
+  .archive-dialog-description {
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .archive-dialog-footer {
+    margin-top: 1rem;
+  }
+
+ /* Styles pour le mode de sélection */
+.user-card {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.selection-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.email-link {
+  color: #3b82f6;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.email-link:hover {
+  text-decoration: underline;
+  color: #2563eb;
+}
+
+/* Style pour les cases à cocher */
+[data-state="checked"] {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+/* Animation pour les cartes lors de l'archivage */
+.user-card.archiving {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+}

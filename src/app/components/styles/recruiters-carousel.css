@@ -1,0 +1,108 @@
+.recruiter-carousel {
+    position: relative;
+    overflow: hidden;
+    padding: 20px 0;
+  }
+  
+  .recruiter-carousel-inner {
+    display: flex;
+    transition: transform 0.5s ease;
+  }
+  
+  .recruiter-card {
+    flex: 0 0 100%;
+    padding: 0 12px;
+    transition: all 0.3s ease;
+  }
+  
+  @media (min-width: 768px) {
+    .recruiter-card {
+      flex: 0 0 50%;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .recruiter-card {
+      flex: 0 0 33.333333%;
+    }
+  }
+  
+  .recruiter-image-container {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #f3f4f6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 10;
+    background-color: #f3f4f6;
+  }
+  
+  .recruiter-card-content {
+    background: white;
+    border-radius: 16px;
+    padding: 70px 24px 24px;
+    margin-top: -60px;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    z-index: 5;
+  }
+  
+  .recruiter-card:hover .recruiter-card-content {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .recruiter-name {
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+  }
+  
+  .recruiter-position {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 12px;
+  }
+  
+  .recruiter-company {
+    font-weight: 600;
+    color: #1967d2;
+    margin-bottom: 16px;
+  }
+  
+  .recruiter-department {
+    display: inline-block;
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 9999px;
+  }
+  
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+  }
+  
+  .carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #e5e7eb;
+    margin: 0 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .carousel-dot.active {
+    background-color: #1967d2;
+    width: 24px;
+    border-radius: 5px;
+  }
