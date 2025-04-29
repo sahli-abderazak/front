@@ -581,7 +581,7 @@ export default function JobDetailPage({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] md:max-w-[800px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">{`Postuler pour: ${offre?.poste}`}</DialogTitle>
             <DialogDescription>Remplissez le formulaire ci-dessous pour soumettre votre candidature.</DialogDescription>
@@ -653,7 +653,37 @@ export default function JobDetailPage({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="ville">Ville</Label>
-                    <Input id="ville" name="ville" value={formData.ville} onChange={handleChange} required />
+                    <Select value={formData.ville} onValueChange={(value) => handleSelectChange("ville", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez une ville" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Tunis">Tunis</SelectItem>
+                        <SelectItem value="Sfax">Sfax</SelectItem>
+                        <SelectItem value="Sousse">Sousse</SelectItem>
+                        <SelectItem value="Kairouan">Kairouan</SelectItem>
+                        <SelectItem value="Bizerte">Bizerte</SelectItem>
+                        <SelectItem value="Gabès">Gabès</SelectItem>
+                        <SelectItem value="Ariana">Ariana</SelectItem>
+                        <SelectItem value="Gafsa">Gafsa</SelectItem>
+                        <SelectItem value="Monastir">Monastir</SelectItem>
+                        <SelectItem value="Ben Arous">Ben Arous</SelectItem>
+                        <SelectItem value="Kasserine">Kasserine</SelectItem>
+                        <SelectItem value="Médenine">Médenine</SelectItem>
+                        <SelectItem value="Nabeul">Nabeul</SelectItem>
+                        <SelectItem value="Tataouine">Tataouine</SelectItem>
+                        <SelectItem value="Béja">Béja</SelectItem>
+                        <SelectItem value="Jendouba">Jendouba</SelectItem>
+                        <SelectItem value="Le Kef">Le Kef</SelectItem>
+                        <SelectItem value="Mahdia">Mahdia</SelectItem>
+                        <SelectItem value="Sidi Bouzid">Sidi Bouzid</SelectItem>
+                        <SelectItem value="Siliana">Siliana</SelectItem>
+                        <SelectItem value="Tozeur">Tozeur</SelectItem>
+                        <SelectItem value="Zaghouan">Zaghouan</SelectItem>
+                        <SelectItem value="Kébili">Kébili</SelectItem>
+                        <SelectItem value="Manouba">Manouba</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="codePostal">Code postal</Label>

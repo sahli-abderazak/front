@@ -62,7 +62,7 @@ export default function ChatPage() {
 
       const response = await fetch(`${API_URL}/api/user`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           Accept: "application/json",
         },
       })
@@ -113,7 +113,7 @@ export default function ChatPage() {
 
       const response = await fetch(`${API_URL}/api/contactable-users`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           Accept: "application/json",
         },
       })
@@ -141,7 +141,7 @@ export default function ChatPage() {
 
       // Si l'utilisateur est un recruteur, sélectionner automatiquement l'admin
       if (data.length > 0) {
-        const userFromStorage = localStorage.getItem("user")
+        const userFromStorage = sessionStorage.getItem("user")
         if (userFromStorage) {
           try {
             const currentUserFromStorage = JSON.parse(userFromStorage)
@@ -169,7 +169,7 @@ export default function ChatPage() {
     try {
       const response = await fetch(`${API_URL}/api/messages/unread-counts`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           Accept: "application/json",
         },
       })
@@ -218,7 +218,7 @@ export default function ChatPage() {
         authEndpoint: `${API_URL}/api/broadcasting/auth`, // Notez le /api/ ajouté ici
         auth: {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             Accept: "application/json",
             "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
           },
@@ -355,7 +355,7 @@ export default function ChatPage() {
       setError(null)
       const response = await fetch(`${API_URL}/api/messages/${selectedUser.id}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           Accept: "application/json",
         },
       })
@@ -379,7 +379,7 @@ export default function ChatPage() {
       await fetch(`${API_URL}/api/messages/${messageId}/read`, {
         method: "PATCH",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           Accept: "application/json",
         },
       })
@@ -393,7 +393,7 @@ export default function ChatPage() {
       await fetch(`${API_URL}/api/messages/read-all/${userId}`, {
         method: "PATCH",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           Accept: "application/json",
         },
       })
@@ -415,7 +415,7 @@ export default function ChatPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           Accept: "application/json",
         },
         body: JSON.stringify({

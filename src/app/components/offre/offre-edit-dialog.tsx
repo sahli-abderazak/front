@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Calendar, Building2, Briefcase, MapPin, Clock, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Calendar, Building2, Briefcase, MapPin, Clock, AlertCircle, CheckCircle2, Sliders } from 'lucide-react'
 
 // Sample data for dropdowns - same as in AddOffreForm
 const DEPARTMENTS = [
@@ -130,6 +130,18 @@ const EDUCATION_LEVELS = [
   { id: "8", name: "Bac+5" },
 ]
 
+const TRAIT_WEIGHTS = [
+  { id: "1", name: "2", value: 2 },
+  { id: "2", name: "3", value: 3 },
+  { id: "3", name: "4", value: 4 },
+  { id: "4", name: "5", value: 5 },
+  { id: "5", name: "6", value: 6 },
+  { id: "6", name: "7", value: 7 },
+  { id: "7", name: "8", value: 8 },
+  { id: "8", name: "9", value: 9 },
+  { id: "9", name: "10", value: 10 },
+]
+
 // Valeur spéciale pour l'option "Autre"
 const AUTRE_OPTION = "autre"
 
@@ -152,6 +164,11 @@ interface Offre {
   societe?: string
   responsabilite?: string
   experience?: string
+  poids_ouverture?: string | number
+  poids_conscience?: string | number
+  poids_extraversion?: string | number
+  poids_agreabilite?: string | number
+  poids_stabilite?: string | number
 }
 
 interface OffreEditDialogProps {
@@ -187,6 +204,11 @@ export function OffreEditDialog({ offre, isOpen, onClose, onOffreUpdated }: Offr
     societe: "",
     responsabilite: "",
     experience: "",
+    poids_ouverture: "2",
+    poids_conscience: "2",
+    poids_extraversion: "2",
+    poids_agreabilite: "2",
+    poids_stabilite: "2",
   })
 
   // États pour les champs personnalisés
@@ -221,6 +243,11 @@ export function OffreEditDialog({ offre, isOpen, onClose, onOffreUpdated }: Offr
         societe: cleanValue(offre.societe),
         responsabilite: cleanValue(offre.responsabilite),
         experience: cleanValue(offre.experience),
+        poids_ouverture: cleanValue(offre.poids_ouverture) || "2",
+        poids_conscience: cleanValue(offre.poids_conscience) || "2",
+        poids_extraversion: cleanValue(offre.poids_extraversion) || "2",
+        poids_agreabilite: cleanValue(offre.poids_agreabilite) || "2",
+        poids_stabilite: cleanValue(offre.poids_stabilite) || "2",
       })
 
       // Vérifier si le domaine et le poste sont dans les listes prédéfinies
@@ -257,6 +284,22 @@ export function OffreEditDialog({ offre, isOpen, onClose, onOffreUpdated }: Offr
     }
   }, [formData.departement])
 
+  // Calculer la somme des poids des traits de personnalité
+  const calculateTotalWeight = () => {
+    const ouverture = Number.parseInt(formData.poids_ouverture as string) || 0
+    const conscience = Number.parseInt(formData.poids_conscience as string) || 0
+    const extraversion = Number.parseInt(formData.poids_extraversion as string) || 0
+    const agreabilite = Number.parseInt(formData.poids_agreabilite as string) || 0
+    const stabilite = Number.parseInt(formData.poids_stabilite as string) || 0
+
+    return ouverture + conscience + extraversion + agreabilite + stabilite
+  }
+
+  // Vérifier si la somme des poids est égale à 15
+  const isWeightSumValid = () => {
+    return calculateTotalWeight() === 15
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -292,12 +335,19 @@ export function OffreEditDialog({ offre, isOpen, onClose, onOffreUpdated }: Offr
     e.preventDefault()
     if (!offre) return
 
+    // Vérifier que la somme des poids est égale à 15
+    if (!isWeightSumValid()) {
+      setError("La somme des poids des traits de personnalité doit être égale à 15.")
+      setActiveTab("personality")
+      return
+    }
+
     setLoading(true)
     setError(null)
     setSuccess(null)
 
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour modifier une offre.")
         return
@@ -533,6 +583,14 @@ export function OffreEditDialog({ offre, isOpen, onClose, onOffreUpdated }: Offr
                 >
                   <Calendar className={styles.icon.base} size={16} />
                   <span>Dates</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("personality")}
+                  className={`${styles.tabButton} ${activeTab === "personality" ? styles.tabButtonActive : styles.tabButtonInactive}`}
+                >
+                  <Sliders className={styles.icon.base} size={16} />
+                  <span>Traits de personnalité</span>
                 </button>
               </div>
 
@@ -912,6 +970,136 @@ export function OffreEditDialog({ offre, isOpen, onClose, onOffreUpdated }: Offr
                           <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                         </div>
                         <p className="text-xs text-gray-500 mt-1">La date doit être postérieure à aujourd'hui</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab content: Personality Traits */}
+                {activeTab === "personality" && (
+                  <div className="space-y-6">
+                    <div className={styles.sectionTitle}>
+                      <Sliders className={styles.icon.primary} />
+                      <span>Poids des traits de personnalité</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Définissez l'importance de chaque trait de personnalité pour ce poste (minimum 2). La somme des
+                      poids doit être égale à 15.
+                    </p>
+
+                    {!isWeightSumValid() && (
+                      <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md mb-4">
+                        <p className="text-red-800 text-sm">
+                          La somme des poids doit être égale à 15. Actuellement: {calculateTotalWeight()}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md mb-4">
+                      <p className="text-blue-800 text-sm">Somme actuelle des poids: {calculateTotalWeight()}/15</p>
+                    </div>
+
+                    <div className={styles.grid}>
+                      {/* Ouverture */}
+                      <div className={styles.formGroup}>
+                        <label htmlFor="poids_ouverture" className={styles.label}>
+                          Poids Ouverture
+                        </label>
+                        <select
+                          id="poids_ouverture"
+                          value={formData.poids_ouverture}
+                          onChange={(e) => handleSelectChange("poids_ouverture", e.target.value)}
+                          className={styles.select}
+                        >
+                          {TRAIT_WEIGHTS.map((weight) => (
+                            <option key={weight.id} value={weight.value}>
+                              {weight.name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Curiosité, créativité, ouverture aux nouvelles idées
+                        </p>
+                      </div>
+
+                      {/* Conscience */}
+                      <div className={styles.formGroup}>
+                        <label htmlFor="poids_conscience" className={styles.label}>
+                          Poids Conscience
+                        </label>
+                        <select
+                          id="poids_conscience"
+                          value={formData.poids_conscience}
+                          onChange={(e) => handleSelectChange("poids_conscience", e.target.value)}
+                          className={styles.select}
+                        >
+                          {TRAIT_WEIGHTS.map((weight) => (
+                            <option key={weight.id} value={weight.value}>
+                              {weight.name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">Organisation, fiabilité, autodiscipline</p>
+                      </div>
+
+                      {/* Extraversion */}
+                      <div className={styles.formGroup}>
+                        <label htmlFor="poids_extraversion" className={styles.label}>
+                          Poids Extraversion
+                        </label>
+                        <select
+                          id="poids_extraversion"
+                          value={formData.poids_extraversion}
+                          onChange={(e) => handleSelectChange("poids_extraversion", e.target.value)}
+                          className={styles.select}
+                        >
+                          {TRAIT_WEIGHTS.map((weight) => (
+                            <option key={weight.id} value={weight.value}>
+                              {weight.name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">Sociabilité, assertivité, énergie</p>
+                      </div>
+
+                      {/* Agréabilité */}
+                      <div className={styles.formGroup}>
+                        <label htmlFor="poids_agreabilite" className={styles.label}>
+                          Poids Agréabilité
+                        </label>
+                        <select
+                          id="poids_agreabilite"
+                          value={formData.poids_agreabilite}
+                          onChange={(e) => handleSelectChange("poids_agreabilite", e.target.value)}
+                          className={styles.select}
+                        >
+                          {TRAIT_WEIGHTS.map((weight) => (
+                            <option key={weight.id} value={weight.value}>
+                              {weight.name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">Coopération, empathie, altruisme</p>
+                      </div>
+
+                      {/* Stabilité */}
+                      <div className={styles.formGroup}>
+                        <label htmlFor="poids_stabilite" className={styles.label}>
+                          Poids Stabilité
+                        </label>
+                        <select
+                          id="poids_stabilite"
+                          value={formData.poids_stabilite}
+                          onChange={(e) => handleSelectChange("poids_stabilite", e.target.value)}
+                          className={styles.select}
+                        >
+                          {TRAIT_WEIGHTS.map((weight) => (
+                            <option key={weight.id} value={weight.value}>
+                              {weight.name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">Gestion du stress, stabilité émotionnelle</p>
                       </div>
                     </div>
                   </div>

@@ -20,7 +20,7 @@ export default function OffrePage() {
     // Vérifier le rôle de l'utilisateur avant de rendre la page
     const checkUserRole = async () => {
       try {
-        const token = localStorage.getItem("token")
+        const token = sessionStorage.getItem("token")
         if (!token) {
           // Rediriger vers la page de connexion si pas de token
           router.push("/")

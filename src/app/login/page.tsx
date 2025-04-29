@@ -55,7 +55,7 @@ export default function Login() {
         }
 
         console.log("Login successful", data)
-        localStorage.setItem("token", data.token)
+        sessionStorage.setItem("token", data.token)
 
         if (email === "admin@gmail.com") {
           router.push("/dashbord")

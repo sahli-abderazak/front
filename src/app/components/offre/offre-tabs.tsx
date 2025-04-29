@@ -74,10 +74,37 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   const [activeTab, setActiveTab] = useState<Record<number, string>>({})
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [currentTabValue, setCurrentTabValue] = useState("offre")
+  const [offres, setOffres] = useState<Offre[]>([])
 
   const [selectedOffre, setSelectedOffre] = useState<Offre | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isEditExpireDialogOpen, setIsEditExpireDialogOpen] = useState(false)
+
+  // State pour la sélection multiple
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedOffers, setSelectedOffers] = useState<number[]>([])
+
+  // Fonction pour activer/désactiver le mode de sélection
+  const toggleSelectMode = () => {
+    setSelectMode((prev) => !prev)
+    if (selectMode) {
+      // Désactiver le mode de sélection
+      setSelectedOffers([]) // Déselectionner toutes les offres
+    }
+  }
+
+  // Fonction pour sélectionner/déselectionner une offre
+  const toggleOfferSelection = (offreId: number) => {
+    setSelectedOffers((prevSelectedOffers) => {
+      if (prevSelectedOffers.includes(offreId)) {
+        // Déselectionner l'offre
+        return prevSelectedOffers.filter((id) => id !== offreId)
+      } else {
+        // Sélectionner l'offre
+        return [...prevSelectedOffers, offreId]
+      }
+    })
+  }
 
   // Fonction pour ajouter une notification
   const addNotification = (message: string, type: "success" | "error" | "warning") => {
@@ -134,7 +161,7 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
 
     setIsSearching(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         addNotification("Vous devez être connecté pour rechercher des offres.", "error")
         return
@@ -202,7 +229,7 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
     // Rechercher toutes les offres avec ce nom de poste
     setIsSearching(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         addNotification("Vous devez être connecté pour rechercher des offres.", "error")
         return
@@ -319,7 +346,7 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
     }
 
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         addNotification("Vous devez être connecté pour supprimer une offre.", "error")
         return
@@ -422,47 +449,57 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
         </div>
       )}
 
-      {currentTabValue === "offre" && (
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Rechercher par nom de poste..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => debouncedSearchTerm && setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              className="pl-8"
-            />
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                {suggestions.map((offre) => (
-                  <div
-                    key={offre.id}
-                    className="px-4 py-2 hover:bg-muted cursor-pointer"
-                    onMouseDown={() => handleSelectSuggestion(offre)}
-                  >
-                    <div className="font-medium">{offre.poste}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {offre.departement} • {offre.domaine}
-                    </div>
+      {/* Barre de recherche et bouton de sélection */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Rechercher par nom de poste..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => debouncedSearchTerm && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            className="pl-8"
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+              {suggestions.map((offre) => (
+                <div
+                  key={offre.id}
+                  className="px-4 py-2 hover:bg-muted cursor-pointer"
+                  onMouseDown={() => handleSelectSuggestion(offre)}
+                >
+                  <div className="font-medium">{offre.poste}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {offre.departement} • {offre.domaine}
                   </div>
-                ))}
-              </div>
-            )}
-            {searchTerm && (
-              <button
-                className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-foreground"
-                onClick={clearSearch}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          {isSearching && <div className="text-sm text-muted-foreground animate-pulse">Recherche...</div>}
+                </div>
+              ))}
+            </div>
+          )}
+          {searchTerm && (
+            <button
+              className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-foreground"
+              onClick={clearSearch}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
-      )}
+        {isSearching && <div className="text-sm text-muted-foreground animate-pulse">Recherche...</div>}
+
+        {/* Bouton de sélection */}
+        <Button
+          variant={selectMode ? "default" : "outline"}
+          onClick={toggleSelectMode}
+          className={`whitespace-nowrap ${selectMode ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+        >
+          {selectMode ? "Terminer" : "Sélectionner"}
+        </Button>
+      </div>
+
+      {/* Barre d'actions pour la sélection par lot */}
 
       {searchResults ? (
         <div className="space-y-6 px-4 py-6">
@@ -762,13 +799,31 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="offre" className="p-6">
-            <OffreTable refresh={refreshTrigger} />
+            <OffreTable
+              refresh={refreshTrigger}
+              selectMode={selectMode}
+              selectedOffers={selectedOffers}
+              toggleOfferSelection={toggleOfferSelection}
+              setOffres={setOffres}
+            />
           </TabsContent>
           <TabsContent value="offre_valide" className="p-6">
-            <OffreTableValide refresh={refreshTrigger} />
+            <OffreTableValide
+              refresh={refreshTrigger}
+              selectMode={selectMode}
+              selectedOffers={selectedOffers}
+              toggleOfferSelection={toggleOfferSelection}
+              setOffres={setOffres}
+            />
           </TabsContent>
           <TabsContent value="offre_expiree" className="p-6">
-            <OffreTableExpiree refresh={refreshTrigger} />
+            <OffreTableExpiree
+              refresh={refreshTrigger}
+              selectMode={selectMode}
+              selectedOffers={selectedOffers}
+              toggleOfferSelection={toggleOfferSelection}
+              setOffres={setOffres}
+            />
           </TabsContent>
         </Tabs>
       )}
@@ -798,4 +853,3 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
     </div>
   )
 }
-

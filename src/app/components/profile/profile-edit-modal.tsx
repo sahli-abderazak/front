@@ -60,7 +60,7 @@ export default function ProfileEditModal({ isOpen, onClose, userData, onSuccess 
   }, [userData, isOpen])
 
   useEffect(() => {
-    const token = localStorage.getItem("token") || localStorage.getItem("auth_token")
+    const token = sessionStorage.getItem("token") || sessionStorage.getItem("auth_token")
     if (!token) {
       setError("Session expirée. Veuillez vous reconnecter.")
     }
@@ -112,7 +112,7 @@ export default function ProfileEditModal({ isOpen, onClose, userData, onSuccess 
 
     try {
       // Get and validate the authentication token
-      const token = localStorage.getItem("token") || localStorage.getItem("auth_token")
+      const token = sessionStorage.getItem("token") || sessionStorage.getItem("auth_token")
       if (!token) {
         setError("Session expirée. Veuillez vous reconnecter.")
         setIsSubmitting(false)

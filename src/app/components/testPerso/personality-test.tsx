@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, AlertCircle, Clock } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import ImageAnalysisTest from "./image-analysis-test"
 import TestSecurity from "./test-security"
 
 interface Option {
@@ -130,72 +129,38 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
       setError(null)
       console.log(`Récupération des questions pour candidat ID: ${candidatId}, offre ID: ${offreId}`)
 
-      // First try to get questions from Laravel backend
-      try {
-        // Ensure IDs are numbers
-        const candidatIdNumber = Number(candidatId)
-        const offreIdNumber = Number(offreId)
+      // Ensure IDs are numbers
+      const candidatIdNumber = Number(candidatId)
+      const offreIdNumber = Number(offreId)
 
-        if (isNaN(candidatIdNumber) || isNaN(offreIdNumber)) {
-          throw new Error("IDs de candidat ou d'offre invalides")
-        }
-
-        const response = await fetch(`http://127.0.0.1:8000/api/generate-test`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            candidat_id: candidatIdNumber,
-            offre_id: offreIdNumber,
-          }),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-
-          if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
-            // Set questions and reset state in a controlled way
-            setQuestions(data.questions)
-            setLoading(false)
-            return
-          } else {
-            console.log("Réponse valide mais format incorrect ou vide, essai avec FastAPI")
-          }
-        } else {
-          const errorText = await response.text()
-          console.log(`Échec de récupération depuis Laravel: ${response.status}, message: ${errorText}`)
-        }
-      } catch (error) {
-        console.error(`Erreur lors de l'appel à Laravel: ${error instanceof Error ? error.message : String(error)}`)
-        // Continue to FastAPI as fallback
+      if (isNaN(candidatIdNumber) || isNaN(offreIdNumber)) {
+        throw new Error("IDs de candidat ou d'offre invalides")
       }
 
-      // Fallback to FastAPI
-      try {
-        const response = await fetch(`http://127.0.0.1:8002/generate-test`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
+      const response = await fetch(`http://127.0.0.1:8000/api/generate-test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          candidat_id: candidatIdNumber,
+          offre_id: offreIdNumber,
+        }),
+      })
 
-        if (!response.ok) {
-          throw new Error(`Erreur lors de la récupération des questions: ${response.status}`)
-        }
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`Erreur HTTP: ${response.status}, message: ${errorText}`)
+        throw new Error(`Erreur lors de la récupération des questions: ${response.status}`)
+      }
 
-        const data = await response.json()
+      const data = await response.json()
+      console.log("Questions reçues:", data)
 
-        if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
-          setQuestions(data.questions)
-          setLoading(false)
-          return
-        } else {
-          throw new Error("Format de réponse invalide depuis FastAPI")
-        }
-      } catch (error) {
-        console.error(`Erreur avec FastAPI: ${error instanceof Error ? error.message : String(error)}`)
-        throw error
+      if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+        setQuestions(data.questions)
+      } else {
+        throw new Error("Format de réponse invalide ou aucune question trouvée")
       }
     } catch (error) {
       console.error(`Erreur: ${error instanceof Error ? error.message : String(error)}`)
@@ -235,7 +200,7 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
       // Calculate final score from all answers
       const finalScore = newAnswers.reduce((total, answer) => total + (answer ? answer.score : 0), 0)
       setTotalScore(finalScore)
-      submitQcmTest(finalScore)
+      submitQcmTest()
     }
   }
 
@@ -246,12 +211,29 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
     }
   }
 
-  const submitQcmTest = async (finalScore: number) => {
+  const submitQcmTest = async () => {
     try {
       setSubmitting(true)
-      console.log(`Soumission du test QCM avec score total: ${finalScore}`)
 
-      // Ensure we have valid IDs and convert them to numbers
+      // Préparer les données des réponses pour le stockage
+      const answersData = answers
+        .map((answer, index) => {
+          if (!answer) return null
+
+          // Trouver l'index de l'option sélectionnée
+          const optionIndex = questions[index].options.findIndex(
+            (opt) => opt.text === answer.text && opt.score === answer.score,
+          )
+
+          return {
+            question_index: index,
+            selected_option_index: optionIndex !== -1 ? optionIndex : 0,
+            score: answer.score,
+          }
+        })
+        .filter((a) => a !== null)
+
+      // Ensure we have valid IDs
       const candidatIdNumber = Number(candidatId)
       const offreIdNumber = Number(offreId)
 
@@ -259,105 +241,53 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
         throw new Error("Identifiants de candidat ou d'offre invalides")
       }
 
-      console.log(
-        `Envoi du score pour candidat ID: ${candidatIdNumber}, offre ID: ${offreIdNumber}, score: ${finalScore}`,
-      )
+      console.log(`Envoi du score pour candidat ID: ${candidatIdNumber}, offre ID: ${offreIdNumber}`)
 
-      // Try to submit the score to the backend
-      let success = false
-      let attempts = 0
-      const maxAttempts = 3
+      // Nous n'avons plus besoin de calculer les scores ici, le backend s'en chargera
+      // avec la nouvelle formule de pourcentage
+      const storeScoreResponse = await fetch(`http://127.0.0.1:8000/api/store-score`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          candidat_id: candidatIdNumber,
+          offre_id: offreIdNumber,
+          score_total: totalScore,
+          questions: questions, // Envoyer toutes les questions
+          answers: answersData, // Envoyer toutes les réponses avec les index
+        }),
+      })
 
-      while (!success && attempts < maxAttempts) {
-        attempts++
-        console.log(`Tentative d'enregistrement du score #${attempts}`)
-
-        try {
-          const response = await fetch(`http://127.0.0.1:8000/api/store-score`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              candidat_id: candidatIdNumber,
-              offre_id: offreIdNumber,
-              score: finalScore,
-              security_violations: securityViolations, // Send security violations to the backend
-            }),
-          })
-
-          // Log the raw response for debugging
-          const responseText = await response.text()
-          console.log(`Response raw text: ${responseText}`)
-
-          // Try to parse the response as JSON
-          let data
-          try {
-            data = JSON.parse(responseText)
-          } catch (e) {
-            console.error(`Failed to parse response as JSON: ${e}`)
-            data = { error: "Invalid JSON response" }
-          }
-
-          if (response.ok) {
-            console.log(`Score enregistré avec succès: ${JSON.stringify(data)}`)
-            success = true
-            break
-          } else {
-            const errorMessage = data.error || data.message || `Erreur HTTP ${response.status}`
-            console.error(`Échec de l'enregistrement: ${errorMessage}`)
-
-            if (attempts === maxAttempts) {
-              throw new Error(errorMessage)
-            }
-          }
-        } catch (apiError) {
-          console.error(
-            `Exception lors de l'appel API: ${apiError instanceof Error ? apiError.message : String(apiError)}`,
-          )
-
-          if (attempts === maxAttempts) {
-            throw apiError
-          }
-        }
-
-        // Wait before next attempt
-        if (!success && attempts < maxAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-        }
+      if (!storeScoreResponse.ok) {
+        const errorData = await storeScoreResponse.json()
+        throw new Error(errorData.error || `Erreur HTTP ${storeScoreResponse.status}`)
       }
 
-      // Move to the image analysis stage
-      setTestStage("image")
+      const data = await storeScoreResponse.json()
+      console.log(`Score enregistré avec succès:`, data)
+
+      // Move directly to completed stage
+      setTestStage("completed")
+      setTestCompleted(true)
+
+      // Call onTestComplete callback if provided
+      if (onTestComplete) {
+        setTimeout(() => {
+          onTestComplete()
+        }, 3000)
+      }
     } catch (error) {
-      console.error(`Erreur finale: ${error instanceof Error ? error.message : String(error)}`)
+      console.error(`Erreur: ${error instanceof Error ? error.message : String(error)}`)
       setError(`Erreur lors de l'enregistrement du score: ${error instanceof Error ? error.message : String(error)}`)
 
-      // Even if there's an error, move to the image analysis stage
+      // Even if there's an error, move to completed stage after a delay
       setTimeout(() => {
-        setTestStage("image")
+        setTestStage("completed")
       }, 2000)
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const handleImageAnalysisComplete = (analysis: string) => {
-    setPersonalityAnalysis(analysis)
-    setTestStage("completed")
-    setTestCompleted(true)
-
-    // Clear the timer when test is completed
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-    }
-
-    // Wait a bit before calling the onTestComplete callback
-    setTimeout(() => {
-      if (onTestComplete) {
-        onTestComplete()
-      }
-    }, 3000)
   }
 
   // Navigation directe vers une question spécifique
@@ -384,9 +314,6 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
 
     // Log the violation to the console
     console.log(`Security violation: ${type}, count: ${count}`)
-
-    // You could also send this to your backend in real-time
-    // This example just stores it to send with the final submission
   }
 
   // Render timeout screen
@@ -424,38 +351,7 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
         </div>
         <h3 className="text-2xl font-bold">Test terminé avec succès !</h3>
         <p className="text-muted-foreground">Votre candidature a été enregistrée avec succès.</p>
-        {personalityAnalysis && (
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4 max-w-2xl text-left">
-            <h4 className="font-medium text-green-800 mb-2">Analyse de personnalité</h4>
-            <p className="text-green-700">{personalityAnalysis}</p>
-          </div>
-        )}
       </div>
-    )
-  }
-
-  if (testStage === "image") {
-    return (
-      <TestSecurity onViolation={handleSecurityViolation} maxViolations={5}>
-        <div className="p-4 space-y-6">
-          {/* Timer display */}
-          <div className="flex items-center justify-center gap-2 text-lg font-medium">
-            <Clock className="h-5 w-5" />
-            <span className={`${timeRemaining < 60 ? "text-red-500 animate-pulse" : ""}`}>
-              Temps restant: {formatTime(timeRemaining)}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="text-xl font-bold">Deuxième partie : Analyse d'image</h3>
-            <p className="text-muted-foreground">
-              Dans cette partie du test, vous allez analyser une image qui représente une situation professionnelle.
-              Votre description nous aidera à mieux comprendre votre personnalité et votre approche du travail.
-            </p>
-          </div>
-          <ImageAnalysisTest candidatId={candidatId} offreId={offreId} onComplete={handleImageAnalysisComplete} />
-        </div>
-      </TestSecurity>
     )
   }
 
@@ -494,7 +390,7 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
   }
 
   const currentQuestion = questions[currentQuestionIndex]
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100
+  const progress = currentQuestionIndex > 0 ? (currentQuestionIndex / questions.length) * 100 : 0
 
   return (
     <TestSecurity onViolation={handleSecurityViolation} maxViolations={5}>
@@ -524,6 +420,7 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
         <div className="border rounded-lg p-6 space-y-6 shadow-sm">
           <div className="space-y-2">
             <h4 className="text-lg font-medium">{currentQuestion.question}</h4>
+            <p className="text-sm text-muted-foreground">Trait: {currentQuestion.trait}</p>
           </div>
 
           <div className="space-y-3">
@@ -573,7 +470,7 @@ const PersonalityTest: React.FC<PersonalityTestProps> = ({ candidatId, offreId, 
                   Traitement...
                 </>
               ) : currentQuestionIndex === questions.length - 1 ? (
-                "Passer à l'analyse d'image"
+                "Terminer le test"
               ) : (
                 "Question suivante"
               )}

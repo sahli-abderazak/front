@@ -23,7 +23,7 @@ export function DashboardSidebarRec() {
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
 
       if (!token) {
         console.error("Aucun token trouvé")
@@ -45,7 +45,7 @@ export function DashboardSidebarRec() {
       }
 
       // Supprimer le token localement
-      localStorage.removeItem("token")
+      sessionStorage.removeItem("token")
 
       // Rediriger vers la page d'accueil ou de connexion
       router.push("/")

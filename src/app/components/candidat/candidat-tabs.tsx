@@ -66,7 +66,7 @@ export function CandidatsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   useEffect(() => {
     const fetchAllCandidats = async () => {
       try {
-        const token = localStorage.getItem("token")
+        const token = sessionStorage.getItem("token")
         if (!token) return
 
         const response = await fetch("http://127.0.0.1:8000/api/candidats-offre", {
@@ -172,7 +172,7 @@ export function CandidatsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
 
     setArchiveLoading(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         console.error("Vous devez être connecté pour archiver un candidat.")
         return

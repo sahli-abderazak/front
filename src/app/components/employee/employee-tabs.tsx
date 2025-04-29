@@ -58,7 +58,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
-        const token = localStorage.getItem("token")
+        const token = sessionStorage.getItem("token")
         if (!token) return
 
         const response = await fetch("http://127.0.0.1:8000/api/users", {
@@ -161,7 +161,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   const confirmArchive = async () => {
     if (!userToArchive) return
 
-    const token = localStorage.getItem("token")
+    const token = sessionStorage.getItem("token")
     if (!token) {
       setIsArchiveDialogOpen(false)
       return
@@ -244,7 +244,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   }
 
   const confirmBatchArchive = async () => {
-    const token = localStorage.getItem("token")
+    const token = sessionStorage.getItem("token")
     if (!token) {
       setIsBatchArchiveDialogOpen(false)
       return

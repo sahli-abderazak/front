@@ -90,7 +90,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
 
   const fetchArchivedCandidats = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour voir les candidats.")
         return
@@ -106,7 +106,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
 
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem("token")
+          sessionStorage.removeItem("token")
           router.push("/auth/login")
           return
         }
@@ -146,7 +146,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
   // Fonction pour désarchiver les candidats sélectionnés
   const unarchiveSelectedCandidats = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour désarchiver des candidats.")
         return
@@ -189,7 +189,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
 
     setUnarchiving(candidatToUnarchive)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour désarchiver un candidat.")
         return

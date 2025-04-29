@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Calendar, Building2, Briefcase, MapPin, Clock, AlertCircle, CheckCircle2, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Sliders } from "lucide-react"
 
 // Sample data for dropdowns - replace with your actual data or API calls
 const DEPARTMENTS = [
@@ -144,6 +145,18 @@ const MATCHING_PERCENTAGES = [
   { id: "8", name: "70%", value: 70 },
 ]
 
+const TRAIT_WEIGHTS = [
+  { id: "1", name: "2", value: 2 },
+  { id: "2", name: "3", value: 3 },
+  { id: "3", name: "4", value: 4 },
+  { id: "4", name: "5", value: 5 },
+  { id: "5", name: "6", value: 6 },
+  { id: "6", name: "7", value: 7 },
+  { id: "7", name: "8", value: 8 },
+  { id: "8", name: "9", value: 9 },
+  { id: "9", name: "10", value: 10 },
+]
+
 // Valeur spéciale pour l'option "Autre"
 const AUTRE_OPTION = "autre"
 
@@ -158,8 +171,8 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({})
 
   // État pour les champs personnalisés
-  const [customDomaine, setCustomPoste] = useState<string>("")
-  const [customPoste, setCustomDomaine] = useState<string>("")
+  const [customDomaine, setCustomDomaine] = useState<string>("")
+  const [customPoste, setCustomPoste] = useState<string>("")
 
   const [formData, setFormData] = useState({
     departement: "",
@@ -178,6 +191,11 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
     responsabilite: "",
     experience: "",
     matchingAttachment: "", // Add this new field
+    poids_ouverture: "2", // Default value
+    poids_conscience: "2", // Default value
+    poids_extraversion: "2", // Default value
+    poids_agreabilite: "2", // Default value
+    poids_stabilite: "2", // Default value
   })
 
   // Filtered options based on department selection
@@ -187,7 +205,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
   useEffect(() => {
     const fetchUserDepartement = async () => {
       try {
-        const token = localStorage.getItem("token")
+        const token = sessionStorage.getItem("token")
         if (!token) {
           setError("Vous devez être connecté pour ajouter une offre.")
           router.push("/auth/login")
@@ -204,7 +222,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
 
         if (!response.ok) {
           if (response.status === 401) {
-            localStorage.removeItem("token")
+            sessionStorage.removeItem("token")
             router.push("/auth/login")
             return
           }
@@ -279,6 +297,22 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
     setter(e.target.value)
   }
 
+  // Calculer la somme des poids des traits de personnalité
+  const calculateTotalWeight = () => {
+    const ouverture = Number.parseInt(formData.poids_ouverture)
+    const conscience = Number.parseInt(formData.poids_conscience)
+    const extraversion = Number.parseInt(formData.poids_extraversion)
+    const agreabilite = Number.parseInt(formData.poids_agreabilite)
+    const stabilite = Number.parseInt(formData.poids_stabilite)
+
+    return ouverture + conscience + extraversion + agreabilite + stabilite
+  }
+
+  // Vérifier si la somme des poids est égale à 15
+  const isWeightSumValid = () => {
+    return calculateTotalWeight() === 15
+  }
+
   const validateForm = () => {
     const errors: Record<string, boolean> = {}
     const requiredFields = [
@@ -318,6 +352,11 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
       }
     })
 
+    // Vérifier que la somme des poids est égale à 15
+    if (!isWeightSumValid()) {
+      errors["personality_weights"] = true
+    }
+
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -342,6 +381,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
         experience: "details",
         ville: "localisation",
         dateExpiration: "dates",
+        personality_weights: "personality",
       }
 
       // Find the first field with an error
@@ -360,7 +400,11 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
         }
       }, 100)
 
-      setError("Veuillez remplir tous les champs obligatoires.")
+      if (validationErrors["personality_weights"]) {
+        setError("La somme des poids des traits de personnalité doit être égale à 15.")
+      } else {
+        setError("Veuillez remplir tous les champs obligatoires.")
+      }
       return
     }
 
@@ -369,7 +413,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
     setSuccess(null)
 
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour ajouter une offre.")
         return
@@ -388,6 +432,11 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
         datePublication: new Date().toISOString().split("T")[0], // Current date
         // Convertir matchingAttachment en valeur numérique pour le champ matching
         matching: formData.matchingAttachment ? Number.parseInt(formData.matchingAttachment.replace("%", "")) : 0,
+        poids_ouverture: formData.poids_ouverture,
+        poids_conscience: formData.poids_conscience,
+        poids_extraversion: formData.poids_extraversion,
+        poids_agreabilite: formData.poids_agreabilite,
+        poids_stabilite: formData.poids_stabilite,
       }
 
       const response = await fetch("http://127.0.0.1:8000/api/addOffres", {
@@ -426,6 +475,11 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
         responsabilite: "",
         experience: "",
         matchingAttachment: "", // Reset this field too
+        poids_ouverture: "2", // Reset to default
+        poids_conscience: "2", // Reset to default
+        poids_extraversion: "2", // Reset to default
+        poids_agreabilite: "2", // Reset to default
+        poids_stabilite: "2", // Reset to default
       })
       setCustomDomaine("")
       setCustomPoste("")
@@ -540,6 +594,14 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
             >
               <Calendar className={styles.icon.base} size={16} />
               <span>Dates</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("personality")}
+              className={`${styles.tabButton} ${activeTab === "personality" ? styles.tabButtonActive : styles.tabButtonInactive}`}
+            >
+              <Sliders className={styles.icon.base} size={16} />
+              <span>Traits de personnalité</span>
             </button>
           </div>
 
@@ -965,6 +1027,134 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>
                     )}
                     <p className="text-xs text-gray-500 mt-1">La date doit être postérieure à aujourd'hui</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab content: Personality Traits */}
+            {activeTab === "personality" && (
+              <div className="space-y-6">
+                <div className={styles.sectionTitle}>
+                  <Sliders className={styles.icon.primary} />
+                  <span>Poids des traits de personnalité</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Définissez l'importance de chaque trait de personnalité pour ce poste (minimum 2). La somme des poids
+                  doit être égale à 15.
+                </p>
+
+                {validationErrors["personality_weights"] && (
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md mb-4">
+                    <p className="text-red-800 text-sm">
+                      La somme des poids doit être égale à 15. Actuellement: {calculateTotalWeight()}
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md mb-4">
+                  <p className="text-blue-800 text-sm">Somme actuelle des poids: {calculateTotalWeight()}/15</p>
+                </div>
+
+                <div className={styles.grid}>
+                  {/* Ouverture */}
+                  <div className={styles.formGroup}>
+                    <label htmlFor="poids_ouverture" className={styles.label}>
+                      Poids Ouverture
+                    </label>
+                    <select
+                      id="poids_ouverture"
+                      value={formData.poids_ouverture}
+                      onChange={(e) => handleSelectChange("poids_ouverture", e.target.value)}
+                      className={styles.select}
+                    >
+                      {TRAIT_WEIGHTS.map((weight) => (
+                        <option key={weight.id} value={weight.value}>
+                          {weight.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Curiosité, créativité, ouverture aux nouvelles idées</p>
+                  </div>
+
+                  {/* Conscience */}
+                  <div className={styles.formGroup}>
+                    <label htmlFor="poids_conscience" className={styles.label}>
+                      Poids Conscience
+                    </label>
+                    <select
+                      id="poids_conscience"
+                      value={formData.poids_conscience}
+                      onChange={(e) => handleSelectChange("poids_conscience", e.target.value)}
+                      className={styles.select}
+                    >
+                      {TRAIT_WEIGHTS.map((weight) => (
+                        <option key={weight.id} value={weight.value}>
+                          {weight.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Organisation, fiabilité, autodiscipline</p>
+                  </div>
+
+                  {/* Extraversion */}
+                  <div className={styles.formGroup}>
+                    <label htmlFor="poids_extraversion" className={styles.label}>
+                      Poids Extraversion
+                    </label>
+                    <select
+                      id="poids_extraversion"
+                      value={formData.poids_extraversion}
+                      onChange={(e) => handleSelectChange("poids_extraversion", e.target.value)}
+                      className={styles.select}
+                    >
+                      {TRAIT_WEIGHTS.map((weight) => (
+                        <option key={weight.id} value={weight.value}>
+                          {weight.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Sociabilité, assertivité, énergie</p>
+                  </div>
+
+                  {/* Agréabilité */}
+                  <div className={styles.formGroup}>
+                    <label htmlFor="poids_agreabilite" className={styles.label}>
+                      Poids Agréabilité
+                    </label>
+                    <select
+                      id="poids_agreabilite"
+                      value={formData.poids_agreabilite}
+                      onChange={(e) => handleSelectChange("poids_agreabilite", e.target.value)}
+                      className={styles.select}
+                    >
+                      {TRAIT_WEIGHTS.map((weight) => (
+                        <option key={weight.id} value={weight.value}>
+                          {weight.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Coopération, empathie, altruisme</p>
+                  </div>
+
+                  {/* Stabilité */}
+                  <div className={styles.formGroup}>
+                    <label htmlFor="poids_stabilite" className={styles.label}>
+                      Poids Stabilité
+                    </label>
+                    <select
+                      id="poids_stabilite"
+                      value={formData.poids_stabilite}
+                      onChange={(e) => handleSelectChange("poids_stabilite", e.target.value)}
+                      className={styles.select}
+                    >
+                      {TRAIT_WEIGHTS.map((weight) => (
+                        <option key={weight.id} value={weight.value}>
+                          {weight.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Gestion du stress, stabilité émotionnelle</p>
                   </div>
                 </div>
               </div>

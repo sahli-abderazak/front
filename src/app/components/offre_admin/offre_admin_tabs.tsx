@@ -20,9 +20,21 @@ import {
   AlertTriangle,
   CheckCircle2,
   Trash,
+  CheckSquare,
+  Square,
+  Loader2,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 // Type pour les notifications
 type Notification = {
@@ -43,6 +55,12 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
   const [activeTab, setActiveTab] = useState<Record<number, string>>({})
   const [isValidating, setIsValidating] = useState<Record<number, boolean>>({})
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedOffers, setSelectedOffers] = useState<number[]>([])
+  const [isBatchValidateDialogOpen, setIsBatchValidateDialogOpen] = useState(false)
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false)
+  const [batchActionLoading, setBatchActionLoading] = useState(false)
+  const [activeTabValue, setActiveTabValue] = useState("offre")
 
   // Fonction pour ajouter une notification
   const addNotification = (message: string, type: "success" | "error") => {
@@ -91,6 +109,12 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
     }
   }, [searchResults])
 
+  // Reset selection when changing tabs
+  useEffect(() => {
+    setSelectMode(false)
+    setSelectedOffers([])
+  }, [activeTabValue])
+
   const handleSearch = async () => {
     if (!debouncedSearchTerm.trim()) {
       setSearchResults(null)
@@ -99,7 +123,7 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
 
     setIsSearching(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         console.error("Vous devez être connecté pour rechercher des offres.")
         return
@@ -164,7 +188,7 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
     // Rechercher toutes les offres avec ce nom de poste
     setIsSearching(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         console.error("Vous devez être connecté pour rechercher des offres.")
         return
@@ -227,7 +251,7 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
     setIsValidating((prev) => ({ ...prev, [offreId]: true }))
 
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         addNotification("Vous devez être connecté pour valider une offre.", "error")
         return
@@ -267,7 +291,7 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
     }
 
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         addNotification("Vous devez être connecté pour supprimer une offre.", "error")
         return
@@ -292,6 +316,161 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
     } catch (error) {
       console.error("Erreur de suppression:", error)
       addNotification("Une erreur est survenue lors de la suppression de l'offre.", "error")
+    }
+  }
+
+  // Toggle selection mode
+  const toggleSelectMode = () => {
+    if (selectMode) {
+      // Si on désactive le mode sélection, on vide la liste des offres sélectionnées
+      setSelectedOffers([])
+    }
+    setSelectMode(!selectMode)
+  }
+
+  // Toggle offer selection
+  const toggleOfferSelection = (offreId: number) => {
+    setSelectedOffers((prev) => {
+      if (prev.includes(offreId)) {
+        return prev.filter((id) => id !== offreId)
+      } else {
+        return [...prev, offreId]
+      }
+    })
+  }
+
+  // Select all offers
+  const selectAllOffers = () => {
+    if (searchResults) {
+      setSelectedOffers(searchResults.map((offre) => offre.id))
+    }
+  }
+
+  // Deselect all offers
+  const deselectAllOffers = () => {
+    setSelectedOffers([])
+  }
+
+  // Validate selected offers
+  const validateSelectedOffers = () => {
+    if (selectedOffers.length > 0) {
+      setIsBatchValidateDialogOpen(true)
+    }
+  }
+
+  // Delete selected offers
+  const deleteSelectedOffers = () => {
+    if (selectedOffers.length > 0) {
+      setIsBatchDeleteDialogOpen(true)
+    }
+  }
+
+  // Confirm batch validation
+  const confirmBatchValidate = async () => {
+    const token = sessionStorage.getItem("token")
+    if (!token) {
+      setIsBatchValidateDialogOpen(false)
+      addNotification("Vous devez être connecté pour valider des offres.", "error")
+      return
+    }
+
+    setBatchActionLoading(true)
+
+    try {
+      // Créer une copie des IDs sélectionnés avant de les valider
+      const offersToValidate = [...selectedOffers]
+
+      // Valider chaque offre sélectionnée
+      const validatePromises = offersToValidate.map((offreId) =>
+        fetch(`http://127.0.0.1:8000/api/validerOffre/${offreId}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ valider: 1 }),
+        }),
+      )
+
+      // Attendre que toutes les requêtes soient terminées
+      await Promise.all(validatePromises)
+        .then(() => {
+          console.log("Toutes les offres ont été validées avec succès")
+
+          // Mettre à jour l'interface APRÈS la validation réussie
+          setSearchResults((prev) =>
+            prev ? prev.map((offre) => (offersToValidate.includes(offre.id) ? { ...offre, valider: 1 } : offre)) : null,
+          )
+
+          // Réinitialiser la sélection
+          setSelectedOffers([])
+          setSelectMode(false)
+
+          addNotification(`${offersToValidate.length} offre(s) validée(s) avec succès.`, "success")
+        })
+        .catch((error) => {
+          console.error("Erreur lors de la validation de certaines offres:", error)
+          addNotification("Une erreur est survenue lors de la validation des offres.", "error")
+        })
+    } catch (error) {
+      console.error("Erreur lors de la validation des offres:", error)
+      addNotification("Une erreur est survenue lors de la validation des offres.", "error")
+    } finally {
+      setBatchActionLoading(false)
+      setIsBatchValidateDialogOpen(false)
+    }
+  }
+
+  // Confirm batch deletion
+  const confirmBatchDelete = async () => {
+    const token = sessionStorage.getItem("token")
+    if (!token) {
+      setIsBatchDeleteDialogOpen(false)
+      addNotification("Vous devez être connecté pour supprimer des offres.", "error")
+      return
+    }
+
+    setBatchActionLoading(true)
+
+    try {
+      // Créer une copie des IDs sélectionnés avant de les supprimer
+      const offersToDelete = [...selectedOffers]
+
+      // Supprimer chaque offre sélectionnée en parallèle
+      const deletePromises = offersToDelete.map((offreId) =>
+        fetch(`http://127.0.0.1:8000/api/supprimerOffre/${offreId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      )
+
+      // Attendre que TOUTES les requêtes soient terminées en même temps
+      await Promise.all(deletePromises)
+        .then(() => {
+          console.log("Toutes les offres ont été supprimées avec succès")
+
+          // Mettre à jour l'interface APRÈS la suppression réussie
+          setSearchResults((prev) => (prev ? prev.filter((offre) => !offersToDelete.includes(offre.id)) : null))
+
+          // Réinitialiser la sélection
+          setSelectedOffers([])
+          setSelectMode(false)
+
+          addNotification(`${offersToDelete.length} offre(s) supprimée(s) avec succès.`, "success")
+        })
+        .catch((error) => {
+          console.error("Erreur lors de la suppression de certaines offres:", error)
+          addNotification("Une erreur est survenue lors de la suppression des offres.", "error")
+        })
+    } catch (error) {
+      console.error("Erreur lors de la suppression des offres:", error)
+      addNotification("Une erreur est survenue lors de la suppression des offres.", "error")
+    } finally {
+      setBatchActionLoading(false)
+      setIsBatchDeleteDialogOpen(false)
     }
   }
 
@@ -361,6 +540,15 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
           )}
         </div>
         {isSearching && <div className="text-sm text-muted-foreground animate-pulse">Recherche...</div>}
+
+        {/* Bouton de sélection */}
+        <Button
+          variant={selectMode ? "default" : "outline"}
+          onClick={toggleSelectMode}
+          className={`whitespace-nowrap ${selectMode ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+        >
+          {selectMode ? "Terminer" : "Sélectionner"}
+        </Button>
       </div>
 
       {searchResults ? (
@@ -370,11 +558,64 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
             <p className="text-sm text-muted-foreground">{searchResults.length} offre(s) trouvée(s)</p>
           </div>
 
+          {/* Barre d'actions pour la sélection par lot */}
+          {selectMode && searchResults.length > 0 && (
+            <div className="batch-actions mb-4 flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md border">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selectAllOffers}
+                className="whitespace-nowrap text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Tout sélectionner
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={deselectAllOffers}
+                className="whitespace-nowrap text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <Square className="h-4 w-4 mr-2" />
+                Tout désélectionner
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={validateSelectedOffers}
+                disabled={selectedOffers.length === 0}
+                className="whitespace-nowrap text-green-600 hover:text-green-700 hover:bg-green-50"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Valider ({selectedOffers.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={deleteSelectedOffers}
+                disabled={selectedOffers.length === 0}
+                className="whitespace-nowrap text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Supprimer ({selectedOffers.length})
+              </Button>
+            </div>
+          )}
+
           {searchResults.length > 0 ? (
             <div className="space-y-8">
               {searchResults.map((offre) => (
-                <Card key={offre.id} className="overflow-hidden shadow-sm mx-2 my-4">
-                  <CardHeader className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <Card key={offre.id} className="overflow-hidden shadow-sm mx-2 my-4 relative">
+                  {selectMode && (
+                    <div className="absolute top-4 left-4 z-10">
+                      <Checkbox
+                        checked={selectedOffers.includes(offre.id)}
+                        onCheckedChange={() => toggleOfferSelection(offre.id)}
+                        className="h-5 w-5 border-2 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      />
+                    </div>
+                  )}
+                  <CardHeader className={`p-6 bg-gradient-to-r from-blue-50 to-indigo-50 ${selectMode ? "pl-12" : ""}`}>
                     <div className="flex flex-col md:flex-row md:items-center gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -584,7 +825,12 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
           )}
         </div>
       ) : (
-        <Tabs defaultValue="offre" className="w-full">
+        <Tabs
+          defaultValue="offre"
+          className="w-full"
+          value={activeTabValue}
+          onValueChange={(value) => setActiveTabValue(value)}
+        >
           <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="offre"
@@ -601,14 +847,108 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
           </TabsList>
 
           <TabsContent value="offre" className="p-6">
-            <OffreAdminTable refresh={refreshTrigger} />
+            <OffreAdminTable
+              refresh={refreshTrigger}
+              selectMode={selectMode}
+              selectedOffers={selectedOffers}
+              toggleOfferSelection={toggleOfferSelection}
+            />
           </TabsContent>
 
           <TabsContent value="offre_valide" className="p-6">
-            <OffreAdminTableValide refresh={refreshTrigger} />
+            <OffreAdminTableValide
+              refresh={refreshTrigger}
+              selectMode={selectMode}
+              selectedOffers={selectedOffers}
+              toggleOfferSelection={toggleOfferSelection}
+            />
           </TabsContent>
         </Tabs>
       )}
+
+      {/* Batch Validate Dialog */}
+      <Dialog
+        open={isBatchValidateDialogOpen}
+        onOpenChange={(open) => {
+          if (!batchActionLoading) setIsBatchValidateDialogOpen(open)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmation de validation en lot</DialogTitle>
+            <DialogDescription>Êtes-vous sûr de vouloir valider {selectedOffers.length} offre(s) ?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-row justify-end gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsBatchValidateDialogOpen(false)}
+              disabled={batchActionLoading}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={confirmBatchValidate}
+              disabled={batchActionLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {batchActionLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Validation...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Valider
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Delete Dialog */}
+      <Dialog
+        open={isBatchDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!batchActionLoading) setIsBatchDeleteDialogOpen(open)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmation de suppression en lot</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer {selectedOffers.length} offre(s) ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-row justify-end gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsBatchDeleteDialogOpen(false)}
+              disabled={batchActionLoading}
+            >
+              Annuler
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmBatchDelete} disabled={batchActionLoading}>
+              {batchActionLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                <>
+                  <Trash className="mr-2 h-4 w-4" />
+                  Supprimer
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

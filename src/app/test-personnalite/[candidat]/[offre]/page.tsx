@@ -206,12 +206,7 @@ export default function TestPersonnalitePage({
                   <div className="test-instructions">
                     <h2 className="instructions-title">Instructions</h2>
                     <p className="instructions-text">
-                      Ce test de personnalité nous aidera à évaluer votre compatibilité avec le poste. Il comporte deux
-                      parties :
-                      <br />
-                      1. Un questionnaire à choix multiples
-                      <br />
-                      2. Une analyse d'image où vous décrirez ce que vous voyez
+                      Ce test de personnalité nous aidera à évaluer votre compatibilité avec le poste. Il comporte Un questionnaire à choix multiples.
                       <br />
                       <br />
                       Veuillez répondre honnêtement à toutes les questions. Il n'y a pas de bonnes ou mauvaises

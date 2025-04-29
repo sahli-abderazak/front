@@ -68,7 +68,7 @@ export default function NotificationsContent() {
     fetch("http://127.0.0.1:8000/api/notifications", {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         Accept: "application/json",
       },
     })
@@ -109,7 +109,7 @@ export default function NotificationsContent() {
       fetch(`http://127.0.0.1:8000/api/notifications/${notification.id}`, {
         method: "PATCH",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           Accept: "application/json",
         },
       })
@@ -159,7 +159,7 @@ export default function NotificationsContent() {
     fetch("http://127.0.0.1:8000/api/notifications", {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         Accept: "application/json",
       },
     })

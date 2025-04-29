@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Eye,
   Undo,
@@ -21,8 +22,15 @@ import {
   FileText,
   VoicemailIcon as Fax,
 } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 // Mise à jour de l'interface User pour correspondre aux champs de l'API
 interface User {
@@ -42,11 +50,20 @@ interface User {
   archived?: boolean
 }
 
+// Modifier l'interface ArchiveTableProps pour ajouter les props de sélection
 interface ArchiveTableProps {
   refresh: boolean
+  selectMode?: boolean
+  selectedUsers?: number[]
+  onToggleSelect?: (user: User) => void
 }
 
-const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
+const ArchiveTable: React.FC<ArchiveTableProps> = ({
+  refresh,
+  selectMode = false,
+  selectedUsers = [],
+  onToggleSelect = () => {},
+}) => {
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState<boolean>(true)
@@ -63,7 +80,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
 
   const fetchArchivedUsers = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour voir les utilisateurs.")
         return
@@ -79,7 +96,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem("token")
+          sessionStorage.removeItem("token")
           router.push("/auth/login")
           return
         }
@@ -107,7 +124,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
 
     setUnarchiving(userToUnarchive)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour désarchiver un utilisateur.")
         return
@@ -128,9 +145,6 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
 
       setUsers(users.filter((user) => user.id !== userToUnarchive))
       setIsConfirmOpen(false)
-
-      // Utiliser une notification plus moderne au lieu de alert
-      // Pour l'instant on garde alert pour ne pas ajouter de nouveaux composants
     } catch (error) {
       console.error("Erreur de désarchivation:", error)
       setError(error instanceof Error ? error.message : "Erreur lors de la désarchivation de l'utilisateur")
@@ -149,6 +163,12 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
   // Fonction pour ouvrir le site web
   const handleOpenWebsite = (url: string) => {
     window.open(url, "_blank")
+  }
+
+  // Ajouter la fonction isUserSelected
+  // Fonction pour vérifier si un utilisateur est sélectionné
+  const isUserSelected = (userId: number) => {
+    return selectedUsers.includes(userId)
   }
 
   // Fonction pour obtenir les initiales
@@ -205,7 +225,17 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
           >
             <CardHeader className="pb-2">
               <div className="flex items-center space-x-4">
+                {selectMode && (
+                  <Checkbox
+                    checked={isUserSelected(user.id)}
+                    onCheckedChange={() => onToggleSelect(user)}
+                    className="mr-2"
+                  />
+                )}
                 <Avatar className={`h-12 w-12 ${getColorClass(user.nom_societe || "")}`}>
+                  {user.image ? (
+                    <AvatarImage src={user.image || "/placeholder.svg"} alt={user.nom_societe || ""} />
+                  ) : null}
                   <AvatarFallback className="text-white font-medium">
                     {getInitials(user.nom_societe || "")}
                   </AvatarFallback>
@@ -260,15 +290,17 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                 <Eye className="mr-2 h-4 w-4" />
                 Détails
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => confirmUnarchive(user.id)}
-                disabled={unarchiving === user.id}
-              >
-                <Undo className="mr-2 h-4 w-4" />
-                {unarchiving === user.id ? "Désarchivage..." : "Désarchiver"}
-              </Button>
+              {!selectMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => confirmUnarchive(user.id)}
+                  disabled={unarchiving === user.id}
+                >
+                  <Undo className="mr-2 h-4 w-4" />
+                  {unarchiving === user.id ? "Désarchivage..." : "Désarchiver"}
+                </Button>
+              )}
             </CardFooter>
           </Card>
         ))}
@@ -290,6 +322,9 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
 
             <div className="flex items-center space-x-4 mb-6">
               <Avatar className={`h-16 w-16 ${getColorClass(selectedUser.nom_societe || "")}`}>
+                {selectedUser.image ? (
+                  <AvatarImage src={selectedUser.image || "/placeholder.svg"} alt={selectedUser.nom_societe || ""} />
+                ) : null}
                 <AvatarFallback className="text-white text-xl font-medium">
                   {getInitials(selectedUser.nom_societe || "")}
                 </AvatarFallback>
@@ -432,7 +467,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
             <DialogTitle>Confirmer la désarchivation</DialogTitle>
             <DialogDescription>Êtes-vous sûr de vouloir désarchiver cette entreprise ?</DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-3 mt-4">
+          <DialogFooter className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
               Annuler
             </Button>
@@ -449,7 +484,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                 </>
               )}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
@@ -457,4 +492,3 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
 }
 
 export default ArchiveTable
-

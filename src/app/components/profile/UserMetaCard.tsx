@@ -32,7 +32,7 @@ export default function ProfilePage() {
   const fetchUserProfile = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) throw new Error("Token non trouvé");
 
       const response = await fetch("http://127.0.0.1:8000/api/users/profile", {

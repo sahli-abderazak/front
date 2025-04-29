@@ -80,7 +80,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
   useEffect(() => {
     const fetchCandidats = async () => {
       try {
-        const token = localStorage.getItem("token")
+        const token = sessionStorage.getItem("token")
         if (!token) {
           setError("Vous devez être connecté pour voir les candidats.")
           return
@@ -96,7 +96,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
 
         if (!response.ok) {
           if (response.status === 401) {
-            localStorage.removeItem("token")
+            sessionStorage.removeItem("token")
             router.push("/auth/login")
             return
           }
@@ -157,7 +157,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
   const fetchOffresParCandidat = async (email: string) => {
     try {
       setLoadingOffres(true)
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour voir les offres.")
         return []
@@ -200,7 +200,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
   const archiveCandidat = async () => {
     if (!candidatToArchive) return
 
-    const token = localStorage.getItem("token")
+    const token = sessionStorage.getItem("token")
     if (!token) {
       setError("Vous devez être connecté pour archiver un candidat.")
       return
@@ -239,7 +239,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
   const deleteCandidat = async () => {
     if (!candidatToDelete) return
 
-    const token = localStorage.getItem("token")
+    const token = sessionStorage.getItem("token")
     if (!token) {
       setError("Vous devez être connecté pour supprimer un candidat.")
       return
@@ -288,7 +288,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
 
   // Fonction pour supprimer les candidats sélectionnés
   const deleteSelectedCandidats = async () => {
-    const token = localStorage.getItem("token")
+    const token = sessionStorage.getItem("token")
     if (!token) {
       setError("Vous devez être connecté pour supprimer des candidats.")
       return
@@ -323,7 +323,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
 
   // Fonction pour marquer les candidats sélectionnés
   const archiveSelectedCandidats = async () => {
-    const token = localStorage.getItem("token")
+    const token = sessionStorage.getItem("token")
     if (!token) {
       setError("Vous devez être connecté pour marquer des candidats.")
       return

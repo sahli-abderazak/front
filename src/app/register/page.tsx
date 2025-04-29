@@ -131,7 +131,7 @@ export default function Register() {
         console.log("Registration successful", data)
         // Stocker le nouveau token si nécessaire
         if (data.token) {
-          localStorage.setItem("token", data.token)
+          sessionStorage.setItem("token", data.token)
         }
         setSuccessDialog(true)
       } else {

@@ -7,7 +7,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Undo, Mail, Phone, MapPin, Globe, Calendar, Building, Search, FileText } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Eye,
+  Undo,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  Calendar,
+  Building,
+  Search,
+  FileText,
+  CheckSquare,
+  Square,
+  Loader2,
+  X,
+} from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -40,6 +56,13 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [unarchiving, setUnarchiving] = useState<number | null>(null)
   const [userToUnarchive, setUserToUnarchive] = useState<number | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedUsers, setSelectedUsers] = useState<UserType[]>([])
+  const [isBatchConfirmOpen, setIsBatchConfirmOpen] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [allArchivedUsers, setAllArchivedUsers] = useState<UserType[]>([])
+  const [loading, setLoading] = useState(false)
+  const [unarchiveSuccess, setUnarchiveSuccess] = useState<number[]>([])
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Fermer le dropdown quand on clique en dehors
@@ -54,6 +77,36 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
+
+  // Charger tous les utilisateurs archivés
+  useEffect(() => {
+    fetchAllArchivedUsers()
+  }, [refreshTrigger, unarchiveSuccess])
+
+  const fetchAllArchivedUsers = async () => {
+    try {
+      setLoading(true)
+      const token = sessionStorage.getItem("token")
+      if (!token) return
+
+      const response = await fetch("http://127.0.0.1:8000/api/users/archived", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) throw new Error("Erreur lors du chargement des utilisateurs archivés")
+
+      const data = await response.json()
+      setAllArchivedUsers(data)
+    } catch (error) {
+      console.error("Erreur de chargement des utilisateurs archivés:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Surveiller les changements dans la barre de recherche
   useEffect(() => {
@@ -72,21 +125,10 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
     }
 
     try {
-      const token = localStorage.getItem("token")
-      if (!token) return
-
-      const response = await fetch(`http://127.0.0.1:8000/api/recruteurs-archives/recherche?letter=${letter}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) throw new Error("Erreur lors de la recherche")
-
-      const data = await response.json()
-      setSearchResults(data)
+      // Filtrer les utilisateurs archivés localement
+      const searchLower = letter.toLowerCase()
+      const filteredResults = allArchivedUsers.filter((user) => user.nom_societe.toLowerCase().includes(searchLower))
+      setSearchResults(filteredResults)
       setShowDropdown(true)
     } catch (error) {
       console.error("Erreur de recherche:", error)
@@ -124,7 +166,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
 
     setUnarchiving(userToUnarchive)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) return
 
       const response = await fetch(`http://127.0.0.1:8000/api/users/unarchive/${userToUnarchive}`, {
@@ -145,6 +187,10 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
         setSelectedUser(null)
         setSearchQuery("") // Vider la barre de recherche après désarchivage
       }
+
+      // Mettre à jour la liste des utilisateurs désarchivés avec succès
+      setUnarchiveSuccess((prev) => [...prev, userToUnarchive])
+
       setIsConfirmOpen(false)
     } catch (error) {
       console.error("Erreur de désarchivation:", error)
@@ -152,6 +198,106 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
       setUnarchiving(null)
       setUserToUnarchive(null)
     }
+  }
+
+  // Fonctions pour la sélection en lot
+  const toggleSelectMode = () => {
+    setSelectMode(!selectMode)
+    if (selectMode) {
+      setSelectedUsers([])
+    }
+  }
+
+  const toggleUserSelection = (user: UserType) => {
+    if (selectedUsers.some((u) => u.id === user.id)) {
+      setSelectedUsers(selectedUsers.filter((u) => u.id !== user.id))
+    } else {
+      setSelectedUsers([...selectedUsers, user])
+    }
+  }
+
+  const isUserSelected = (userId: number) => {
+    return selectedUsers.some((user) => user.id === userId)
+  }
+
+  const selectAllUsers = () => {
+    if (selectedUser) {
+      setSelectedUsers([selectedUser])
+    } else {
+      setSelectedUsers(allArchivedUsers)
+    }
+  }
+
+  const deselectAllUsers = () => {
+    setSelectedUsers([])
+  }
+
+  const handleBatchUnarchive = async () => {
+    if (selectedUsers.length === 0) return
+
+    setIsProcessing(true)
+    try {
+      const token = sessionStorage.getItem("token")
+      if (!token) return
+
+      // Créer une copie des utilisateurs sélectionnés avant de les désarchiver
+      const usersToUnarchive = [...selectedUsers]
+
+      // Désarchiver chaque utilisateur sélectionné
+      const unarchivePromises = usersToUnarchive.map((user) =>
+        fetch(`http://127.0.0.1:8000/api/users/unarchive/${user.id}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      )
+
+      // Attendre que toutes les requêtes soient terminées
+      await Promise.all(unarchivePromises)
+        .then(() => {
+          console.log("Tous les utilisateurs ont été désarchivés avec succès")
+
+          // Mettre à jour la liste des utilisateurs désarchivés avec succès
+          setUnarchiveSuccess((prev) => [...prev, ...usersToUnarchive.map((user) => user.id)])
+
+          // Si l'utilisateur sélectionné a été désarchivé, réinitialiser
+          if (selectedUser && usersToUnarchive.some((user) => user.id === selectedUser.id)) {
+            setSelectedUser(null)
+            setSearchQuery("")
+          }
+
+          // Réinitialiser la sélection
+          setSelectedUsers([])
+          setSelectMode(false)
+        })
+        .catch((error) => {
+          console.error("Erreur lors de la désarchivation de certains utilisateurs:", error)
+        })
+    } catch (error) {
+      console.error("Erreur lors de la désarchivation des utilisateurs:", error)
+    } finally {
+      // Désactiver l'indicateur de chargement et fermer la boîte de dialogue
+      setIsProcessing(false)
+      setIsBatchConfirmOpen(false)
+    }
+  }
+
+  const openGmailWithSelectedUsers = () => {
+    if (selectedUsers.length === 0) return
+
+    const emails = selectedUsers.map((user) => user.email).join(",")
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${emails}`
+    window.open(gmailUrl, "_blank")
+  }
+
+  // Effacer la recherche
+  const clearSearch = () => {
+    setSearchQuery("")
+    setSelectedUser(null)
+    setSearchResults([])
+    setShowDropdown(false)
   }
 
   // Fonctions utilitaires
@@ -188,54 +334,127 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
 
   return (
     <div className="space-y-4">
-      {/* Barre de recherche */}
-      <div className="relative" ref={dropdownRef}>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher une entreprise archivée..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="pl-10 w-full"
-          />
+      {/* Barre de recherche et actions en lot */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="relative flex-1" ref={dropdownRef}>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher une entreprise archivée..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="pl-10 w-full"
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Dropdown des résultats */}
+          {showDropdown && searchResults.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 max-h-60 overflow-auto">
+              {searchResults.map((user) => (
+                <div
+                  key={user.id}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                  onClick={() => handleSelectCandidat(user)}
+                >
+                  {user.image ? (
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.image || "/placeholder.svg?height=32&width=32"} alt={user.nom_societe} />
+                      <AvatarFallback className={`text-white text-xs ${getColorClass(user.nom_societe)}`}>
+                        {getInitials(user.nom_societe)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <Avatar className={`h-8 w-8 ${getColorClass(user.nom_societe)}`}>
+                      <AvatarFallback className="text-white text-xs">{getInitials(user.nom_societe)}</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className="font-medium">{user.nom_societe}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Dropdown des résultats */}
-        {showDropdown && searchResults.length > 0 && (
-          <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 max-h-60 overflow-auto">
-            {searchResults.map((user) => (
-              <div
-                key={user.id}
-                className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
-                onClick={() => handleSelectCandidat(user)}
-              >
-                {user.image ? (
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.image} alt={user.nom_societe} />
-                    <AvatarFallback className={`text-white text-xs ${getColorClass(user.nom_societe)}`}>
-                      {getInitials(user.nom_societe)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Avatar className={`h-8 w-8 ${getColorClass(user.nom_societe)}`}>
-                    <AvatarFallback className="text-white text-xs">{getInitials(user.nom_societe)}</AvatarFallback>
-                  </Avatar>
-                )}
-                <div className="font-medium">{user.nom_societe}</div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Bouton de sélection */}
+        <Button
+          variant={selectMode ? "default" : "outline"}
+          onClick={toggleSelectMode}
+          className={`whitespace-nowrap ${selectMode ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+        >
+          {selectMode ? "Terminer" : "Sélectionner"}
+        </Button>
       </div>
+
+      {/* Barre d'actions pour la sélection par lot */}
+      {selectMode && (
+        <div className="batch-actions mb-4 flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md border">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={selectAllUsers}
+            className="whitespace-nowrap text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <CheckSquare className="h-4 w-4 mr-2" />
+            Tout sélectionner
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={deselectAllUsers}
+            className="whitespace-nowrap text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Square className="h-4 w-4 mr-2" />
+            Tout désélectionner
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openGmailWithSelectedUsers}
+            disabled={selectedUsers.length === 0}
+            className="whitespace-nowrap text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Email ({selectedUsers.length})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsBatchConfirmOpen(true)}
+            disabled={selectedUsers.length === 0}
+            className="whitespace-nowrap text-green-600 hover:text-green-700 hover:bg-green-50"
+          >
+            <Undo className="h-4 w-4 mr-2" />
+            Désarchiver ({selectedUsers.length})
+          </Button>
+        </div>
+      )}
 
       {/* Affichage du recruteur sélectionné */}
       {selectedUser && (
         <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col mb-6">
           <CardHeader className="pb-2">
             <div className="flex items-center space-x-4">
+              {selectMode && (
+                <Checkbox
+                  checked={isUserSelected(selectedUser.id)}
+                  onCheckedChange={() => toggleUserSelection(selectedUser)}
+                  className="mr-2"
+                />
+              )}
               {selectedUser.image ? (
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={selectedUser.image} alt={selectedUser.nom_societe} />
+                  <AvatarImage
+                    src={selectedUser.image || "/placeholder.svg?height=48&width=48"}
+                    alt={selectedUser.nom_societe}
+                  />
                   <AvatarFallback className={`text-white font-medium ${getColorClass(selectedUser.nom_societe)}`}>
                     {getInitials(selectedUser.nom_societe)}
                   </AvatarFallback>
@@ -321,15 +540,17 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
               <Eye className="mr-2 h-4 w-4" />
               Détails
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => confirmUnarchive(selectedUser.id)}
-              disabled={unarchiving === selectedUser.id}
-            >
-              <Undo className="mr-2 h-4 w-4" />
-              {unarchiving === selectedUser.id ? "Désarchivage..." : "Désarchiver"}
-            </Button>
+            {!selectMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => confirmUnarchive(selectedUser.id)}
+                disabled={unarchiving === selectedUser.id}
+              >
+                <Undo className="mr-2 h-4 w-4" />
+                {unarchiving === selectedUser.id ? "Désarchivage..." : "Désarchiver"}
+              </Button>
+            )}
           </CardFooter>
         </Card>
       )}
@@ -346,7 +567,12 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="archive" className="p-6">
-            <ArchiveTable refresh={refreshTrigger} />
+            <ArchiveTable
+              refresh={refreshTrigger || unarchiveSuccess.length > 0}
+              selectMode={selectMode}
+              selectedUsers={selectedUsers.map((user) => user.id)}
+              onToggleSelect={(user) => toggleUserSelection(user)}
+            />
           </TabsContent>
         </Tabs>
       ) : null}
@@ -363,7 +589,10 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
             <div className="flex items-center space-x-4 mb-6">
               {selectedUser.image ? (
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={selectedUser.image} alt={selectedUser.nom_societe} />
+                  <AvatarImage
+                    src={selectedUser.image || "/placeholder.svg?height=64&width=64"}
+                    alt={selectedUser.nom_societe}
+                  />
                   <AvatarFallback
                     className={`text-white text-xl font-medium ${getColorClass(selectedUser.nom_societe)}`}
                   >
@@ -518,7 +747,41 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Boîte de dialogue de confirmation de désarchivage en lot */}
+      <Dialog
+        open={isBatchConfirmOpen}
+        onOpenChange={(open) => {
+          if (!isProcessing) setIsBatchConfirmOpen(open)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer la désarchivation en lot</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir désarchiver ces {selectedUsers.length} entreprises ?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setIsBatchConfirmOpen(false)} disabled={isProcessing}>
+              Annuler
+            </Button>
+            <Button onClick={handleBatchUnarchive} disabled={isProcessing}>
+              {isProcessing ? (
+                <div className="flex items-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Désarchivage...
+                </div>
+              ) : (
+                <>
+                  <Undo className="mr-2 h-4 w-4" />
+                  Désarchiver ({selectedUsers.length})
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-

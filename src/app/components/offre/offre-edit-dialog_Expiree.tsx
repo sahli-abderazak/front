@@ -65,7 +65,7 @@ export function OffreEditDialogExpiree({
     setSuccess(null)
 
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         setError("Vous devez être connecté pour modifier une offre.")
         return

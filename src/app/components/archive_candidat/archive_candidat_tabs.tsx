@@ -66,7 +66,7 @@ export function ArchiveCandidatsTabs({ refreshTrigger }: { refreshTrigger: boole
   useEffect(() => {
     const fetchAllArchivedCandidats = async () => {
       try {
-        const token = localStorage.getItem("token")
+        const token = sessionStorage.getItem("token")
         if (!token) return
 
         const response = await fetch("http://127.0.0.1:8000/api/candidats_archived_societe", {
@@ -137,7 +137,7 @@ export function ArchiveCandidatsTabs({ refreshTrigger }: { refreshTrigger: boole
     }
 
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         console.error("Vous devez être connecté pour rechercher des candidats.")
         return
@@ -216,7 +216,7 @@ export function ArchiveCandidatsTabs({ refreshTrigger }: { refreshTrigger: boole
 
     setUnarchiveLoading(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = sessionStorage.getItem("token")
       if (!token) {
         console.error("Vous devez être connecté pour désarchiver un candidat.")
         return

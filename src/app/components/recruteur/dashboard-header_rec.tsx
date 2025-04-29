@@ -34,7 +34,7 @@ export function DashboardHeaderRec() {
     fetch("http://localhost:8000/api/users/profile", {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         Accept: "application/json",
       },
     })
@@ -54,7 +54,7 @@ export function DashboardHeaderRec() {
     fetch("http://localhost:8000/api/notifications", {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         Accept: "application/json",
       },
     })
@@ -76,7 +76,7 @@ export function DashboardHeaderRec() {
     fetch(`http://localhost:8000/api/notifications/${notification.id}`, {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         Accept: "application/json",
       },
     })
@@ -104,7 +104,7 @@ export function DashboardHeaderRec() {
     fetch("http://localhost:8000/api/notifications", {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         Accept: "application/json",
       },
     })
@@ -218,14 +218,14 @@ export function DashboardHeaderRec() {
     fetch("http://localhost:8000/api/logout", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         Accept: "application/json",
       },
     })
       .then((response) => response.json())
       .then(() => {
         // Supprimer le token localement
-        localStorage.removeItem("token")
+        sessionStorage.removeItem("token")
 
         // Rediriger vers la page d'accueil
         window.location.href = "/"
@@ -233,7 +233,7 @@ export function DashboardHeaderRec() {
       .catch((error) => {
         console.error("Erreur lors de la déconnexion :", error)
         // En cas d'erreur, on supprime quand même le token et on redirige
-        localStorage.removeItem("token")
+        sessionStorage.removeItem("token")
         window.location.href = "/"
       })
   }
