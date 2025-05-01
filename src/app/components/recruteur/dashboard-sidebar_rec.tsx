@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Home, Users, Building2, Briefcase, UserCircle, LogOut } from "lucide-react"
+import { Home, Users, Building2, Briefcase, UserCircle, LogOut,Calendar } from "lucide-react"
 
 const menuItems = [
   { icon: <Home className="h-4 w-4" />, label: "Dashboard", href: "/dashbord_rec" },
@@ -14,7 +14,7 @@ const menuItems = [
   //{ icon: <Calendar className="h-4 w-4" />, label: "Calendar", href: "/calendar" },
   //{ icon: <Star className="h-4 w-4" />, label: "Reviews", href: "/reviews" },
   //{ icon: <BarChart className="h-4 w-4" />, label: "Reports", href: "/reports" },
-  //{ icon: <Settings className="h-4 w-4" />, label: "Settings", href: "/settings" },
+  { icon: <Calendar className="h-4 w-4" />, label: "Entretiens", href: "/entretiens" },
   { icon: <UserCircle className="h-4 w-4" />, label: "Profile", href: "/profile" },
 ]
 

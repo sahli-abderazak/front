@@ -176,7 +176,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
           console.warn(`Aucune offre trouvée pour le candidat avec l'email ${email}`)
           return []
         }
-        throw new Error(`Erreur lors de la récupération des offres pour ${email}`)
+        // throw new Error(`Erreur lors de la récupération des offres pour ${email}`)
       }
 
       const data = await response.json()
@@ -751,20 +751,24 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
                       ? selectedCandidatOffres
                       : selectedCandidat.offres || [selectedCandidat.offre]
                     ).map((offre, index) => (
-                      <div key={index} className="p-3 border rounded-md">
-                        <div className="flex justify-between items-center mb-1">
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="w-full p-3 h-auto flex flex-col items-start"
+                        onClick={() => router.push(`/candidat-offre/${offre.id}`)}
+                      >
+                        <div className="flex justify-between items-center w-full mb-1">
                           <div className="font-medium">{offre.poste || "Non spécifié"}</div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          
-                          <div className="text-muted-foreground col-span-2">
+                        <div className="grid grid-cols-2 gap-2 text-sm w-full">
+                          <div className="text-muted-foreground col-span-2 text-left">
                             Publication:{" "}
                             {offre.datePublication
                               ? new Date(offre.datePublication).toLocaleDateString("fr-FR")
                               : "Non spécifié"}
                           </div>
                         </div>
-                      </div>
+                      </Button>
                     ))}
                   </div>
                 )}
